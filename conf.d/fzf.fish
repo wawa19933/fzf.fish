@@ -5,7 +5,6 @@ if not set --query fzf_fish_custom_keybindings
     bind \cr '__fzf_search_history'
     bind \cv '__fzf_search_shell_variables'
     bind \ec '__fzf_cd_subdir'
-    bind \ec '__fzf_cd_subdir'
     # The following two key binding use Alt as an additional modifier key to avoid conflicts
     bind \e\cl '__fzf_search_git_log'
     bind \e\cs '__fzf_search_git_status'
@@ -38,6 +37,7 @@ function _fzf_uninstall --on-event fzf_uninstall
         bind --erase --all \cf
         bind --erase --all \cr
         bind --erase --all \cv
+        bind --erase --all \ec
         bind --erase --all \e\cl
         bind --erase --all \e\cs
 
