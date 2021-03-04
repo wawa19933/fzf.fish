@@ -2,7 +2,7 @@
 
 # fzf.fish 🔍🐟
 
-[![latest release badge][]][releases] [![fish version badge][]](#installation) [![awesome badge][]][awesome fish]
+[![latest release badge][]][releases] [![build status badge][]][actions] [![awesome badge][]][awesome fish]
 
 </div>
 
@@ -16,10 +16,12 @@ Use `fzf.fish` to interactively find and insert into the command line:
 
 ![file search][]
 
-- **Search input:** recursive listing of current directory's files
+- **Search input:** recursive listing of current directory's non-hidden files
 - **Key binding and mnemonic:** <kbd>Ctrl</kbd>+<kbd>F</kbd> (`F` for file)
 - **Preview window:** file with syntax highlighting, directory contents, or file type
 - **Remarks**
+  - prepends `./` to the selection if only one selection is made and it becomes the only token on the command line, making it easy to execute if an executable, or cd into if a directory (see [cd docs][])
+  - if the current token is a directory with a trailing slash (e.g. `functions/<CURSOR>`), then search will be scoped to that directory
   - ignores files that are also ignored by git
   - <kbd>Tab</kbd> to multi-select
 
@@ -45,6 +47,7 @@ Use `fzf.fish` to interactively find and insert into the command line:
 
 - **Search input:** the command history from all interactive sessions of Fish
 - **Key binding and mnemonic:** <kbd>Ctrl</kbd>+<kbd>R</kbd> (`R` for reverse-i-search)
+- **Preview window:** the entire command, wrapped
 
 ### A shell variable
 
@@ -52,7 +55,9 @@ Use `fzf.fish` to interactively find and insert into the command line:
 
 - **Search input:** all the variable names of the environment, both local and exported
 - **Key binding and mnemonic:** <kbd>Ctrl</kbd>+<kbd>V</kbd> (`V` for variable)
-- **Preview window:** the value of the variable if it was exported
+- **Preview window:** the scope info and values of the variable
+- **Remarks**
+  - `$history` is excluded for technical reasons so use the search command history feature instead to inspect it
 
 _The prompt used in the screencasts was created using [IlanCosman/tide][]._
 
@@ -81,11 +86,11 @@ Finally, install the following CLI tools:
 
 For macOS, I recommend installing them using [brew][].
 
-On certain distribution of Linux, you will need to alias `fdfind` to `fd` (see [#23][]).
+On certain distribution of Linux, you will need to alias `fdfind` to `fd` (see [#93](https://github.com/PatrickF1/fzf.fish/discussions/93)).
 
 ## Configuration
 
-### Using custom key bindings
+### Custom key bindings
 
 If you would like to customize the key bindings, first, prevent the default key bindings from executing by setting `fzf_fish_custom_keybindings` as an [universal variable][]. You can do this with
 
@@ -113,81 +118,65 @@ Alternatively, you can override it in your `config.fish`:
 set --export FZF_DEFAULT_OPTS --height 50% --margin 1
 ```
 
+### Change the command used to preview folders
+
+The search files feature, by default, uses `ls` to preview the contents of a directory. To integrate with the variety of `ls` replacements available, the command used to preview directories is configurable through the `fzf_preview_dir_cmd` variable. For example, in your `config.fish`, you may put:
+
+```fish
+set fzf_preview_dir_cmd exa --all --color=always
+```
+
+Do not specify a target path in the command, as `fzf.fish` will [prepend the directory][custom preview command] to preview to the command itself.
+
+### Change the files searched
+
+To pass custom options to `fd` when it is executed to populate the list of files for the search files feature, set the `fzf_fd_opts` variable. For example, to include hidden files but not `.git`, put this in your `config.fish`:
+
+```fish
+set fzf_fd_opts --hidden --exclude=.git
+```
+
+### Change the key binding or Fzf options for a single command
+
+See the [FAQ][] Wiki page.
+
 ## Prior art
 
-### Jethrokuan/fzf
+If `fzf.fish` is a useful plugin, it is by standing on the shoulder of giants. There are two other fzf integrations for Fish worth regarding: [jethrokuan/fzf][] and fzf's out-of-the-box [Fish extension][]. The [Prior Art][] Wiki page explains how `fzf.fish` compares to and improves on them.
 
-[jethrokuan/fzf][] is another fzf plugin that provides similar features and is prevalent in the fish community (470+ stargazers and 30 contributors, including me). In fact, I referenced it when creating this plugin—thank you Jethro!
+## Troubleshooting & FAQ
 
-So why _another_ fzf plugin? While contributing to `jethrokuan/fzf`, I was discouraged by the complexity and inefficiency of the code that resulted from feature cruft (e.g. it provides multiple overlapping ways to action on files: find, cd, and open) and poor design decisions (e.g. Tmux support was implemented using a variable command). Moreover, Jethro has lost interest in his plugin (he later confirmed to me that he stopped using fish). Wanting a sharper tool and to give back to the community, I decided to write my own plugin.
+Need help? These Wiki pages can guide you:
 
-After much work, `fzf.fish` now implements most of the same features but is faster, easier to maintain, and more [Unix-y][unix philosophy]. I also added new features: using fzf to search git status, git log, and shell variables. However, I chose not to implement Tmux support, because users can easily add support externally themselves; and tab completion, because even `jethrokuan/fzf`'s implementation of it is buggy as evidenced by the many [issues reported about it][].
+- [Troubleshooting][troubleshooting]
+- [FAQ][faq]
 
-**TLDR:** choose `fzf.fish` over [jethrokuan/fzf][] if you want
-
-- faster, more efficient, code
-- code that is easier to debug if you encounter issues
-- a tool built on [Unix philosophy][]
-- a plugin that is more likely to attract future contributors because it is more maintainable
-- a plugin that will be more frequently updated by its author (Jethro no longer uses fish)
-- features for searching git status, git log, and shell variables
-
-and you don't mind
-
-- having to integrate fzf with Tmux yourself, which is easy to do
-- not having buggy fzf tab completion
-
-### Fzf's out-of-the-box Fish extension
-
-Fzf optionally comes with its own [Fish extension][]. It is substantial but `fzf.fish` has these advantages over it:
-
-- features for searching git status, git log, and shell variables
-- timestamps when searching command history
-- colorized results when searching for files
-- previews when searching for files
-- configurable key bindings
-- [autoloaded][autoloads] functions for faster shell startup
-- easier to read, maintain, and contribute to
-- better maintained
-
-## Troubleshooting
-
-### Key bindings do not work
-
-- Execute `bind` and check if there are bindings overriding the bindings starting with `__fzf_`.
-- Ensure [jethrokuan/fzf][] and the [Fish extension][] that ships with fzf are uninstalled.
-- Ensure you're using Fish 3.1.2 or newer.
-- In your terminal's settings, map Option to Meta (see [#54]).
-
-### File search feature does not work
-
-- If you are on certain distribution of Linux, you will need to alias `fdfind` to `fd` (see [#23][]).
-- `fd`, by default, ignores files also ignored by git. Check your local and global `.gitignore` files to see if the files not showing up have been ignored.
-
-[#23]: https://github.com/patrickf1/fzf.fish/issues/23
-[#54]: https://github.com/PatrickF1/fzf.fish/issues/54
-[autoloads]: https://fishshell.com/docs/current/tutorial.html#autoloading-functions
+[actions]: https://github.com/PatrickF1/fzf.fish/actions
 [awesome badge]: https://awesome.re/mentioned-badge.svg
 [awesome fish]: https://git.io/awsm.fish
 [bat]: https://github.com/sharkdp/bat
 [brew]: https://brew.sh
+[build status badge]: https://img.shields.io/github/workflow/status/patrickf1/fzf.fish/CI
+[custom preview command]: functions/__fzf_preview_file.fish#L7
+[cd docs]: https://fishshell.com/docs/current/cmds/cd.html
 [command history search]: images/command_history.gif
 [conf.d/fzf.fish]: conf.d/fzf.fish
+[faq]: https://github.com/PatrickF1/fzf.fish/wiki/FAQ
 [fd]: https://github.com/sharkdp/fd
 [file search]: images/directory.gif
-[Fish extension]: https://github.com/junegunn/fzf/blob/master/shell/key-bindings.fish
-[fish version badge]: https://img.shields.io/badge/fish-v3.1.2%2B-green
-[Fish]: http://fishshell.com
-[Fisher]: https://github.com/jorgebucaran/fisher
+[fish]: http://fishshell.com
+[fisher]: https://github.com/jorgebucaran/fisher
+[fish extension]: https://github.com/junegunn/fzf/blob/master/shell/key-bindings.fish
 [fzf_default_opts]: https://github.com/junegunn/fzf#environment-variables
 [fzf]: https://github.com/junegunn/fzf
 [git log search]: images/git_log.gif
 [git status select]: images/git_status.gif
 [ilancosman/tide]: https://github.com/IlanCosman/tide
-[issues reported about it]: https://github.com/jethrokuan/fzf/issues?q=is%3Aissue+tab
 [jethrokuan/fzf]: https://github.com/jethrokuan/fzf
 [latest release badge]: https://img.shields.io/github/v/release/patrickf1/fzf.fish
+[prior art]: https://github.com/PatrickF1/fzf.fish/wiki/Prior-Art
 [releases]: https://github.com/patrickf1/fzf.fish/releases
 [shell variables search]: images/shell_variables.gif
+[troubleshooting]: https://github.com/PatrickF1/fzf.fish/wiki/Troubleshooting
 [universal variable]: https://fishshell.com/docs/current/#more-on-universal-variables
 [unix philosophy]: https://en.wikipedia.org/wiki/Unix_philosophy
