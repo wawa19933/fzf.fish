@@ -17,6 +17,7 @@ function __fzf_cd_subdir -d "Change directory without replacing current commandl
         # use the directory name as fzf's prompt to indicate the search is limited to that directory
         set --append fzf_arguments --prompt=$token --preview="__fzf_preview_file $token{}"
         set file_paths_selected $expanded_token(fd $fd_opts 2>/dev/null | fzf $fzf_arguments)
+        commandline --current-token ''
     else
         set --append fzf_arguments --query=$token --preview='__fzf_preview_file {}'
         set file_paths_selected (fd $fd_opts 2>/dev/null | fzf $fzf_arguments)
