@@ -8,7 +8,7 @@ function __fzf_preview_file --argument-names file_path --description "Print a pr
         else
             # -A list hidden files as well, except for . and ..
             # -F helps classify files by appending symbols after the file name
-            command exa --color always -Ta -L2 -I '.git' "$file_path"
+            command -q exa --color always -Ta -L2 -I '.git' "$file_path" 2>/dev/null
             or command ls -A -F "$file_path"
         end
     else if test -L "$file_path" # symlink
