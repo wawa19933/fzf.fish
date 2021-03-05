@@ -37,6 +37,7 @@ function __fzf_cd_subdir -d "Change directory without replacing current commandl
         if test "$commandline_tokens" = "$current_token"
             if not string match --quiet --regex "^[.|/]" $file_paths_selected
                 set file_paths_selected ./$file_paths_selected
+                commandline --current-token $file_paths_selected
             end
             commandline --function execute
         else
